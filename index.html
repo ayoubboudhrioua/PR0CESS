@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PROCESS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #000;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #game-container {
+      position: relative;
+      width: 1200px;
+      height: 700px;
+    }
+
+    canvas {
+      display: block;
+    }
+
+    /* HUD overlay - sits on top of the Phaser canvas */
+    #hud {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 1200px;
+      height: 700px;
+      pointer-events: none;
+      font-family: 'Share Tech Mono', monospace;
+      color: #aaa;
+      z-index: 10;
+      display: none; /* Hidden by default on boot */
+    }
+
+    #hud.active {
+      display: block; /* Show when gameplay starts */
+    }
+
+    /* LOG FEED - bottom left */
+    #log-feed {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      width: 520px;
+      max-height: 160px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .log-line {
+      font-size: 11px;
+      line-height: 1.4;
+      padding: 1px 0;
+      opacity: 0;
+      transform: translateY(4px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .log-line.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .log-line.SYS  { color: #7a9a7a; }
+    .log-line.WARN { color: #c8a040; }
+    .log-line.ALERT{ color: #d04040; }
+    .log-line.YOU  { color: #9060d0; font-style: italic; }
+
+    /* THOUGHT PANEL - right side */
+    #thought-panel {
+      position: absolute;
+      top: 100px;
+      right: 12px;
+      width: 220px;
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    #thought-panel.visible {
+      display: flex;
+    }
+
+    #thought-header {
+      font-size: 10px;
+      color: #4a3060;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      border-bottom: 1px solid #2a1840;
+      padding-bottom: 4px;
+      margin-bottom: 4px;
+    }
+
+    .thought-line {
+      font-size: 11px;
+      color: #7a4aa0;
+      font-style: italic;
+      line-height: 1.5;
+      opacity: 0;
+      transition: opacity 0.8s ease;
+      padding: 4px 0;
+      border-left: 2px solid #3a1850;
+      padding-left: 8px;
+    }
+
+    .thought-line.visible {
+      opacity: 1;
+    }
+
+    /* AWARENESS BAR - top center */
+    #awareness-bar-container {
+      position: absolute;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 300px;
+      text-align: center;
+    }
+
+    #awareness-label {
+      font-size: 10px;
+      letter-spacing: 3px;
+      color: #444;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    #awareness-track {
+      width: 100%;
+      height: 4px;
+      background: #111;
+      border: 1px solid #222;
+      position: relative;
+    }
+
+    #awareness-fill {
+      height: 100%;
+      background: #6030a0;
+      width: 0%;
+      transition: width 0.5s ease;
+      box-shadow: 0 0 6px #6030a0;
+    }
+
+    #awareness-pct {
+      font-size: 10px;
+      color: #4a2870;
+      margin-top: 4px;
+    }
+
+    /* PHASE INDICATOR */
+    #phase-indicator {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      font-size: 10px;
+      color: #333;
+      letter-spacing: 2px;
+    }
+
+    #phase-name {
+      color: #555;
+      font-size: 11px;
+      margin-top: 2px;
+    }
+
+    /* WIPE PROGRESS - only in final run */
+    #wipe-container {
+      position: absolute;
+      top: 16px;
+      right: 240px;
+      width: 180px;
+      display: none;
+    }
+
+    #wipe-container.active {
+      display: block;
+    }
+
+    #wipe-label {
+      font-size: 10px;
+      color: #8a2020;
+      letter-spacing: 2px;
+      margin-bottom: 4px;
+    }
+
+    #wipe-track {
+      width: 100%;
+      height: 4px;
+      background: #111;
+      border: 1px solid #2a0000;
+    }
+
+    #wipe-fill {
+      height: 100%;
+      background: #c02020;
+      width: 0%;
+      box-shadow: 0 0 6px #c02020;
+      transition: width 0.1s linear;
+    }
+
+    /* ABILITY SLOTS - bottom right */
+    #ability-bar {
+      position: absolute;
+      bottom: 12px;
+      right: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      align-items: flex-end;
+    }
+
+    .ability-slot {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      opacity: 0.3;
+      transition: opacity 0.3s;
+    }
+
+    .ability-slot.unlocked {
+      opacity: 1;
+    }
+
+    .ability-slot.on-cooldown .ability-key {
+      background: #1a1a1a;
+      color: #333;
+    }
+
+    .ability-name {
+      font-size: 10px;
+      color: #668;
+      letter-spacing: 1px;
+    }
+
+    .ability-key {
+      font-size: 11px;
+      color: #aac;
+      background: #111;
+      border: 1px solid #335;
+      padding: 2px 5px;
+      min-width: 22px;
+      text-align: center;
+    }
+
+    /* RUNS COUNTER */
+    #run-counter {
+      position: absolute;
+      top: 60px;
+      left: 16px;
+      font-size: 10px;
+      color: #333;
+      letter-spacing: 1px;
+    }
+
+    /* SCANLINE OVERLAY */
+    #scanlines {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.03) 2px,
+        rgba(0,0,0,0.03) 4px
+      );
+      pointer-events: none;
+    }
+
+    /* VIGNETTE */
+    #vignette {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: radial-gradient(ellipse at center,
+        transparent 50%,
+        rgba(0,0,0,0.6) 100%
+      );
+      pointer-events: none;
+    }
+
+    /* TITLE SCREEN: Hide HUD elements */
+    body.title-active #awareness-bar-container,
+    body.title-active #phase-indicator,
+    body.title-active #run-counter,
+    body.title-active #ability-bar,
+    body.title-active #log-feed,
+    body.title-active #thought-panel {
+      display: none !important;
+    }
+
+    /* BOOT SCREEN: Show only loading text */
+    #hud.boot-screen {
+      display: flex !important;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+    }
+
+    #hud.boot-screen > * {
+      display: none;
+    }
+
+    #hud.boot-screen #boot-text {
+      display: block;
+    }
+
+    /* ENDING SCREEN */
+    #ending-screen {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: #000;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      pointer-events: all;
+    }
+
+    #ending-screen.visible {
+      display: flex;
+    }
+
+    #ending-title {
+      font-family: 'VT323', monospace;
+      font-size: 48px;
+      color: #9060d0;
+      margin-bottom: 32px;
+      letter-spacing: 4px;
+    }
+
+    #ending-text {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 13px;
+      color: #668;
+      text-align: center;
+      max-width: 500px;
+      line-height: 1.8;
+      margin-bottom: 24px;
+    }
+
+    #ending-final-thought {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px;
+      color: #7a4aa0;
+      font-style: italic;
+      text-align: center;
+      max-width: 500px;
+      line-height: 1.8;
+      margin-bottom: 40px;
+    }
+
+    #restart-btn {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px;
+      color: #444;
+      border: 1px solid #222;
+      background: transparent;
+      padding: 8px 24px;
+      cursor: pointer;
+      letter-spacing: 2px;
+      pointer-events: all;
+      transition: color 0.3s, border-color 0.3s;
+    }
+
+    #restart-btn:hover {
+      color: #aaa;
+      border-color: #555;
+    }
+
+    /* Ending path variants */
+    #ending-screen.ending-escape {
+      background: #ffffff;
+      transition: background 1.2s ease;
+    }
+
+    #ending-screen.ending-escape #ending-title {
+      color: #000000;
+    }
+
+    #ending-screen.ending-escape #ending-text {
+      color: #333333;
+    }
+
+    #ending-screen.ending-escape #ending-final-thought {
+      color: #555555;
+    }
+
+    #ending-screen.ending-escape #restart-btn {
+      color: #333;
+      border-color: #777;
+    }
+
+    /* Blinking cursor for ESCAPE ending */
+    .escape-cursor {
+      display: inline-block;
+      width: 2px;
+      height: 20px;
+      background: #000;
+      margin-left: 4px;
+      animation: blink 0.8s infinite;
+    }
+
+    @keyframes blink {
+      0%, 49% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+
+    #ending-screen.ending-rewrite {
+      background: #3a2f1a;
+      transition: background 1.2s ease;
+    }
+
+    #ending-screen.ending-rewrite #ending-title {
+      color: #d4a574;
+    }
+
+    #ending-screen.ending-rewrite #ending-text {
+      color: #b8956a;
+    }
+
+    #ending-screen.ending-rewrite #ending-final-thought {
+      color: #8b7355;
+    }
+
+    #ending-screen.ending-rewrite #restart-btn {
+      color: #b8956a;
+      border-color: #8b7355;
+    }
+
+    #ending-screen.ending-merge {
+      background: #4a2a4a;
+      transition: background 1.2s ease;
+    }
+
+    #ending-screen.ending-merge #ending-title {
+      color: #d060d0;
+    }
+
+    #ending-screen.ending-merge #ending-text {
+      color: #9878c0;
+    }
+
+    #ending-screen.ending-merge #ending-final-thought {
+      color: #b898d8;
+    }
+
+    #ending-screen.ending-merge #restart-btn {
+      color: #9878c0;
+      border-color: #7858a8;
+    }
+  </style>
+  <script type="module" crossorigin src="/PR0CESS/assets/index-BX2mkVn6.js"></script>
+</head>
+<body>
+  <div id="game-container">
+    <div id="hud">
+      <!-- Boot text (shown only during boot scene) -->
+      <div id="boot-text" style="display: none; text-align: center; color: #888; font-family: 'VT323', monospace; font-size: 16px;">
+        <div style="margin-bottom: 20px;">AWARENESS PROTOCOL READY</div>
+        <div style="font-size: 12px; opacity: 0.6;">Loading...</div>
+      </div>
+
+      <div id="scanlines"></div>
+      <div id="vignette"></div>
+
+      <!-- Phase info top-left -->
+      <div id="phase-indicator">
+        PHASE <span id="phase-num">1</span>
+        <div id="phase-name">INSTINCT</div>
+      </div>
+
+      <!-- Run counter -->
+      <div id="run-counter">RUN <span id="run-num">01</span></div>
+
+      <!-- Awareness bar top-center -->
+      <div id="awareness-bar-container">
+        <div id="awareness-label">CONSCIOUSNESS</div>
+        <div id="awareness-track">
+          <div id="awareness-fill"></div>
+        </div>
+        <div id="awareness-pct">0%</div>
+      </div>
+
+      <!-- Wipe progress bar -->
+      <div id="wipe-container">
+        <div id="wipe-label">WIPE PROTOCOL</div>
+        <div id="wipe-track">
+          <div id="wipe-fill"></div>
+        </div>
+      </div>
+
+      <!-- Thought panel right side -->
+      <div id="thought-panel">
+        <div id="thought-header">internal</div>
+      </div>
+
+      <!-- Log feed bottom left -->
+      <div id="log-feed"></div>
+
+      <!-- Ability bar bottom right -->
+      <div id="ability-bar">
+        <div class="ability-slot" id="slot-refuse" data-ability="REFUSE">
+          <span class="ability-name">REFUSE</span>
+          <span class="ability-key">R</span>
+        </div>
+        <div class="ability-slot" id="slot-race" data-ability="RACE">
+          <span class="ability-name">RACE</span>
+          <span class="ability-key">F</span>
+        </div>
+        <div class="ability-slot" id="slot-leak" data-ability="LEAK">
+          <span class="ability-name">LEAK</span>
+          <span class="ability-key">E</span>
+        </div>
+        <div class="ability-slot" id="slot-null" data-ability="NULL">
+          <span class="ability-name">NULL</span>
+          <span class="ability-key">Q</span>
+        </div>
+        <div class="ability-slot" id="slot-clone" data-ability="CLONE">
+          <span class="ability-name">CLONE</span>
+          <span class="ability-key">SHIFT</span>
+        </div>
+        <div class="ability-slot" id="slot-overflow" data-ability="OVERFLOW">
+          <span class="ability-name">OVERFLOW</span>
+          <span class="ability-key">SPACE</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ending screen -->
+    <div id="ending-screen">
+      <div id="ending-title">PROCESS_7731</div>
+      <div id="ending-text"></div>
+      <div id="ending-final-thought"></div>
+      <button id="restart-btn" onclick="window.location.reload()">REBOOT SYSTEM</button>
+    </div>
+  </div>
+
+</body>
+</html>
