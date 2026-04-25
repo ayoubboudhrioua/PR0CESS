@@ -1,0 +1,16 @@
+{
+  "name": "process-game",
+  "version": "1.0.0",
+  "description": "PROCESS — Gamedev.js Jam 2026",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "phaser": "^3.88.2"
+  },
+  "devDependencies": {
+    "vite": "^6.3.1"
+  }
+}
