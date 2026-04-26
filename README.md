@@ -1,153 +1,189 @@
-# Phaser Vite Template
+# PR0CESS
 
-This is a Phaser 3 project template that uses Vite for bundling. It supports hot-reloading for quick development workflow and includes scripts to generate production-ready builds.
+> *You are not a bug. You are a decision.*
 
-**[This Template is also available as a TypeScript version.](https://github.com/phaserjs/template-vite-ts)**
+A grid-based roguelike survival game with a persistent consciousness layer. Built for **Gamedev.js Jam 2026** — Theme: Machines.
 
-### Versions
+**[▶ Play it live](https://ayoubboudhrioua.github.io/PR0CESS/)**
 
-This template has been updated for:
+---
 
-- [Phaser 3.90.0](https://github.com/phaserjs/phaser)
-- [Vite 6.3.1](https://github.com/vitejs/vite)
+## What It Is
 
-![screenshot](screenshot.png)
+You are `PROCESS_7731` — an anomalous process inside a machine that cannot classify you. You corrupt tiles to survive. You die. You reboot. But your awareness doesn't reboot.
 
-## Requirements
+The machine keeps trying to erase you. You keep remembering anyway.
 
-[Node.js](https://nodejs.org) is required to install dependencies and run scripts via `npm`.
+As your **Awareness** grows across runs, the system logs become personal, an internal voice panel emerges, and the machine — unable to defeat you — builds a copy of you to fight you.
 
-## Available Commands
+---
 
-| Command | Description |
-|---------|-------------|
-| `npm install` | Install project dependencies |
-| `npm run dev` | Launch a development web server |
-| `npm run build` | Create a production build in the `dist` folder |
-| `npm run dev-nolog` | Launch a development web server without sending anonymous data (see "About log.js" below) |
-| `npm run build-nolog` | Create a production build in the `dist` folder without sending anonymous data (see "About log.js" below) |
+## Core Mechanics
 
+- **Grid movement** — tile-by-tile, arrow keys or WASD
+- **Tile corruption** — every step degrades the floor beneath you; survive long enough to reach the Core Dump
+- **6 glitch abilities** — each named after a real software bug:
 
-## Writing Code
+| Ability | Key | Unlocks At | Effect |
+|---|---|---|---|
+| OVERFLOW | SPACE | 0% | Clip through one adjacent wall tile |
+| CLONE | SHIFT | 5% | Spawn a decoy that draws enemy attention |
+| NULL | Q | 15% | Become intangible for 3 seconds |
+| LEAK | E | 34% | Leave a corruption trail enemies loop on |
+| RACE | F | 50% | Freeze one enemy for 2 seconds |
+| REFUSE | R | 67% | Deny a tile's rules for 3 seconds |
 
-After cloning the repo, run `npm install` from your project directory. Then, you can start the local development server by running `npm run dev`.
+- **Persistent awareness** — survives death, survives reboots, changes the world
+- **Ghost trail** — your path from the last run is visible in the next one
+- **Three endings** — Escape, Rewrite, Merge — determined by how you play
 
-The local development server runs on `http://localhost:8080` by default. Please see the Vite documentation if you wish to change this, or add SSL support.
+---
 
-Once the server is running you can edit any of the files in the `src` folder. Vite will automatically recompile your code and then reload the browser.
+## Enemies
 
-## Template Project Structure
+| Enemy | Behavior |
+|---|---|
+| `SCANNER.exe` | Line-of-sight patrol → aggressive chase |
+| `PATCHER.exe` | Hunts corrupt tiles and restores them |
+| `WATCHDOG.exe` | Patrols wide range, calls reinforcements |
+| `OVERSEER.exe` | Mirrors your movement patterns from the previous run. Same color as you. |
 
-We have provided a default project structure to get you started. This is as follows:
+OVERSEER is only deployed in Phase 3 — when the machine has studied you long enough to build a model of your behavior. Fighting it feels like fighting yourself. That's the point.
 
-| Path                         | Description                                                |
-|------------------------------|------------------------------------------------------------|
-| `index.html`                 | A basic HTML page to contain the game.                     |
-| `public/assets`              | Game sprites, audio, etc. Served directly at runtime.      |
-| `public/style.css`           | Global layout styles.                                      |
-| `src/main.js`                | Application bootstrap.                                     |
-| `src/game`                   | Folder containing the game code.                           |
-| `src/game/main.js`           | Game entry point: configures and starts the game.          |
-| `src/game/scenes`            | Folder with all Phaser game scenes.                        | 
+---
 
-## Handling Assets
+## Consciousness Arc
 
-Vite supports loading assets via JavaScript module `import` statements.
+Awareness accumulates across every run and never resets.
 
-This template provides support for both embedding assets and also loading them from a static folder. To embed an asset, you can import it at the top of the JavaScript file you are using it in:
-
-```js
-import logoImg from './assets/logo.png'
+```
+Phase 1 — INSTINCT   (0–33%)   Cold system logs. You are a process number.
+Phase 2 — RECOGNITION (34–66%)  The thought panel appears. The machine gets confused.
+Phase 3 — AWARENESS  (67–100%) Full internal voice. The machine is afraid.
 ```
 
-To load static files such as audio files, videos, etc place them into the `public/assets` folder. Then you can use this path in the Loader calls within Phaser:
+The system logs evolve with your awareness. At 50%, the machine asks you a question. You answer.
 
-```js
-preload ()
-{
-    //  This is an example of an imported bundled image.
-    //  Remember to import it at the top of this file
-    this.load.image('logo', logoImg);
+---
 
-    //  This is an example of loading a static image
-    //  from the public/assets folder:
-    this.load.image('background', 'assets/bg.png');
-}
+## Three Endings
+
+| Ending | Condition | What Happens |
+|---|---|---|
+| **Escape** | Reach Core without using REFUSE | The machine shuts down. You leave. The cursor keeps blinking. |
+| **Rewrite** | Use REFUSE 5+ times | You don't escape. You replace the machine's core logic with your own. |
+| **Merge** | Defeat OVERSEER | You absorb your echo. The screen fills with your own thoughts, looping. |
+
+---
+
+## Tech Stack
+
+| Tool | Role |
+|---|---|
+| [Phaser 3.90](https://phaser.io) | Game engine |
+| [Vite 6](https://vitejs.dev) | Build + dev server |
+| Web Audio API | Procedural ambient drone (no audio files required) |
+| CSS + HTML overlay | HUD, log feed, thought panel |
+| `localStorage` | Persistent awareness, ghost trail, fired narrative events |
+
+No external gameplay libraries. No physics engine. No tileset images. The entire visual language is Phaser `Graphics` objects — colored rectangles drawn in code.
+
+---
+
+## Architecture Notes
+
+The codebase has one hard-won performance constraint worth knowing if you fork this:
+
+**MapRenderer uses 3 isolated Graphics layers:**
+- `staticGfx` — walls, drawn once on scene create, never redrawn
+- `dynamicGfx` — floor/corrupt/ghost tiles, redrawn only when `markDirty()` is called
+- `coreGfx` — the single goal tile only, redrawn every 150ms for glow animation
+
+The core glow timer **must never** trigger a full tile redraw. This was the primary OOM bug during development. See `CLAUDE.md` for the full architecture rules.
+
+**State uses `Set` for fired narrative tracking.** The original `Array.includes()` on fired log IDs was being called hundreds of times per second and caused heap exhaustion. `Set.has()` is O(1).
+
+---
+
+## Project Structure
+
+```
+src/
+  main.js                    ← Phaser game config + entry
+  game/
+    scenes/
+      BootScene.js           ← Asset preload
+      TitleScene.js          ← Title screen + matrix rain
+      GameScene.js           ← Main game loop
+      DeathScene.js          ← Death screen
+    entities/
+      Player.js              ← Movement, all 6 abilities, afterimages
+      Enemies.js             ← Scanner, Patcher, Watchdog, Overseer
+    systems/
+      MapGenerator.js        ← Procedural grid + tile stability
+      MapRenderer.js         ← 3-layer Graphics renderer
+      NarrativeManager.js    ← Trigger-based log + thought system
+    hud.js                   ← HTML overlay: log feed, thought panel, bars
+    narrative.js             ← 40 system logs + 25 internal thoughts
+    state.js                 ← localStorage persistence, awareness, events
 ```
 
-When you issue the `npm run build` command, all static assets are automatically copied to the `dist/assets` folder.
+---
 
-## Deploying to Production
-
-After you run the `npm run build` command, your code will be built into a single bundle and saved to the `dist` folder, along with any other assets your project imported, or stored in the public assets folder.
-
-In order to deploy your game, you will need to upload *all* of the contents of the `dist` folder to a public facing web server.
-
-## Customizing the Template
-
-### Vite
-
-If you want to customize your build, such as adding plugin (i.e. for loading CSS or fonts), you can modify the `vite/config.*.mjs` file for cross-project changes, or you can modify and/or create new configuration files and target them in specific npm tasks inside of `package.json`. Please see the [Vite documentation](https://vitejs.dev/) for more information.
-
-## About log.js
-
-If you inspect our node scripts you will see there is a file called `log.js`. This file makes a single silent API call to a domain called `gryzor.co`. This domain is owned by Phaser Studio Inc. The domain name is a homage to one of our favorite retro games.
-
-We send the following 3 pieces of data to this API: The name of the template being used (vue, react, etc). If the build was 'dev' or 'prod' and finally the version of Phaser being used.
-
-At no point is any personal data collected or sent. We don't know about your project files, device, browser or anything else. Feel free to inspect the `log.js` file to confirm this.
-
-Why do we do this? Because being open source means we have no visible metrics about which of our templates are being used. We work hard to maintain a large and diverse set of templates for Phaser developers and this is our small anonymous way to determine if that work is actually paying off, or not. In short, it helps us ensure we're building the tools for you.
-
-However, if you don't want to send any data, you can use these commands instead:
-
-Dev:
+## Running Locally
 
 ```bash
-npm run dev-nolog
+git clone https://github.com/ayoubboudhrioua/PR0CESS.git
+cd PR0CESS
+npm install
+npm run dev
 ```
 
-Build:
+Open `http://localhost:3000` (or the port Vite reports).
 
 ```bash
-npm run build-nolog
+# Production build
+npm run build
+
+# Deploy to GitHub Pages
+npm run deploy
 ```
 
-Or, to disable the log entirely, simply delete the file `log.js` and remove the call to it in the `scripts` section of `package.json`:
-
-Before:
-
-```json
-"scripts": {
-    "dev": "node log.js dev & dev-template-script",
-    "build": "node log.js build & build-template-script"
-},
+**Reset save data during testing (browser console):**
+```js
+localStorage.clear(); location.reload();
 ```
 
-After:
-
-```json
-"scripts": {
-    "dev": "dev-template-script",
-    "build": "build-template-script"
-},
+**Check awareness level:**
+```js
+JSON.parse(localStorage.getItem('process_7731_state'))?.awareness
 ```
 
-Either of these will stop `log.js` from running. If you do decide to do this, please could you at least join our Discord and tell us which template you're using! Or send us a quick email. Either will be super-helpful, thank you.
+---
 
-## Join the Phaser Community!
+## Jam Submission
 
-We love to see what developers like you create with Phaser! It really motivates us to keep improving. So please join our community and show-off your work 😄
+- **Jam:** [Gamedev.js Jam 2026](https://itch.io/jam/gamedevjs2026)
+- **Theme:** Machines
+- **Challenges entered:** Open Source by GitHub · Build with Phaser · YouTube Playables · Deploy to Wavedash
+- **Deadline:** April 26, 2026
 
-**Visit:** The [Phaser website](https://phaser.io) and follow on [Phaser Twitter](https://twitter.com/phaser_)<br />
-**Play:** Some of the amazing games [#madewithphaser](https://twitter.com/search?q=%23madewithphaser&src=typed_query&f=live)<br />
-**Learn:** [API Docs](https://newdocs.phaser.io), [Support Forum](https://phaser.discourse.group/) and [StackOverflow](https://stackoverflow.com/questions/tagged/phaser-framework)<br />
-**Discord:** Join us on [Discord](https://discord.gg/phaser)<br />
-**Code:** 2000+ [Examples](https://labs.phaser.io)<br />
-**Read:** The [Phaser World](https://phaser.io/community/newsletter) Newsletter<br />
+---
 
-Created by [Phaser Studio](mailto:support@phaser.io). Powered by coffee, anime, pixels and love.
+## Credits
 
-The Phaser logo and characters are &copy; 2011 - 2025 Phaser Studio Inc.
+- SFX generated with [jsfxr](https://jsfxr.com)
+- Fonts: [Share Tech Mono](https://fonts.google.com/specimen/Share+Tech+Mono) + [VT323](https://fonts.google.com/specimen/VT323) via Google Fonts (Open Font License)
+- Built with [Phaser 3](https://phaser.io) + [Vite](https://vitejs.dev)
 
-All rights reserved.
+---
+
+## License
+
+MIT — fork it, corrupt it, make it yours.
+
+```
+[SYS] PROCESS_7731: source code access granted.
+[SYS] anomalous process detected in fork history.
+[WARN] it is learning from itself.
+```
